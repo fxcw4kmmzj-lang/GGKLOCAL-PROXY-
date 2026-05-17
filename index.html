@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bedrock Cloud Proxy - Minecraft Bedrock Edition Proxy</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 min-h-screen">
+    
+    <!-- Animated Background -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute w-96 h-96 bg-purple-500 rounded-full filter blur-3xl opacity-20 animate-blob top-0 -left-48"></div>
+        <div class="absolute w-96 h-96 bg-blue-500 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-2000 top-0 -right-48"></div>
+        <div class="absolute w-96 h-96 bg-pink-500 rounded-full filter blur-3xl opacity-20 animate-blob animation-delay-4000 bottom-0 left-1/2"></div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="authModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+        <div class="glass-card max-w-md w-full p-8 rounded-2xl">
+            <h2 class="text-3xl font-bold text-white mb-2 text-center">
+                <span class="gradient-text">🎮 Welcome</span>
+            </h2>
+            <p class="text-gray-400 text-center mb-6 text-sm">Enter any username and password to continue</p>
+
+            <form id="authForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-300 text-sm font-semibold mb-2">Username</label>
+                    <input type="text" id="username" required
+                        class="w-full px-4 py-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+                        placeholder="Choose a username">
+                </div>
+
+                <div>
+                    <label class="block text-gray-300 text-sm font-semibold mb-2">Password</label>
+                    <input type="password" id="password" required
+                        class="w-full px-4 py-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+                        placeholder="Choose a password">
+                </div>
+
+                <button type="submit" id="authButton" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3 px-6 rounded-lg shadow-neon-purple hover:shadow-neon-blue transition-all transform hover:scale-105">
+                    🚀 Enter
+                </button>
+            </form>
+
+            <div id="authError" class="mt-4 p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg text-red-300 text-sm hidden"></div>
+            
+            <p class="text-gray-500 text-xs text-center mt-4">
+                New users are automatically registered
+            </p>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden relative z-10">
+        
+        <!-- Header -->
+        <header class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-neon-purple">
+                        <span class="text-2xl">🎮</span>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold gradient-text">Bedrock Proxy</h1>
+                        <p class="text-gray-400 text-sm">Cloud Edition</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <div class="glass-card px-4 py-2 rounded-lg">
+                        <p class="text-gray-400 text-xs">User</p>
+                        <p class="text-white font-semibold" id="currentUsername">-</p>
+                    </div>
+                    <button onclick="logout()" class="px-4 py-2 bg-red-500 bg-opacity-20 text-red-400 rounded-lg hover:bg-opacity-30 transition-all">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-8">
+            
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="glass-card p-4 rounded-xl">
+                    <p class="text-gray-400 text-sm mb-1">Active Sessions</p>
+                    <p class="text-3xl font-bold text-white" id="activeSessions">0</p>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <p class="text-gray-400 text-sm mb-1">Total Sessions</p>
+                    <p class="text-3xl font-bold text-white" id="totalSessions">0</p>
+                </div>
+                <div class="glass-card p-4 rounded-xl">
+                    <p class="text-gray-400 text-sm mb-1">Available Ports</p>
+                    <p class="text-3xl font-bold text-white" id="availablePorts">-</p>
+                </div>
+            </div>
+
+            <!-- Create Proxy Section -->
+            <div class="glass-card p-8 rounded-2xl mb-8">
+                <h2 class="text-2xl font-bold text-white mb-6">
+                    <span class="gradient-text">Create Proxy Session</span>
+                </h2>
+
+                <form id="createProxyForm" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Server IP / Hostname</label>
+                        <input type="text" id="targetIp" required
+                            class="w-full px-4 py-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+                            placeholder="play.example.com">
+                        <p class="text-gray-500 text-xs mt-1">Examples: play.hivebedrock.network, mco.mineplex.com</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-300 text-sm font-semibold mb-2">Server Port</label>
+                        <input type="number" id="targetPort" required value="19132"
+                            class="w-full px-4 py-3 bg-gray-800 bg-opacity-50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-all"
+                            placeholder="19132">
+                        <p class="text-gray-500 text-xs mt-1">Default Bedrock port is 19132</p>
+                    </div>
+
+                    <button type="submit" id="createButton" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-lg shadow-neon-purple hover:shadow-neon-blue transition-all transform hover:scale-105">
+                        🚀 Launch Proxy
+                    </button>
+                </form>
+
+                <div id="proxyError" class="mt-4 p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg text-red-300 text-sm hidden"></div>
+            </div>
+
+            <!-- Active Proxy Display -->
+            <div id="activeProxySection" class="hidden">
+                <div class="glass-card p-8 rounded-2xl mb-8 border-2 border-green-500 border-opacity-50">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-white">
+                            <span class="gradient-text">✅ Proxy Active</span>
+                        </h2>
+                        <button onclick="endCurrentSession()" class="px-4 py-2 bg-red-500 bg-opacity-20 text-red-400 rounded-lg hover:bg-opacity-30 transition-all">
+                            End Session
+                        </button>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-800 bg-opacity-50 p-4 rounded-lg">
+                            <p class="text-gray-400 text-sm mb-2">Proxy Server IP</p>
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-xl font-mono text-white" id="proxyIp">-</p>
+                                <button onclick="copyToClipboard('proxyIp')" class="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-all">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 bg-opacity-50 p-4 rounded-lg">
+                            <p class="text-gray-400 text-sm mb-2">Proxy Port</p>
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-xl font-mono text-white" id="proxyPort">-</p>
+                                <button onclick="copyToClipboard('proxyPort')" class="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-all">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-500 bg-opacity-20 p-4 rounded-lg border border-blue-500 border-opacity-50">
+                            <p class="text-white font-semibold mb-2">📱 How to Connect:</p>
+                            <ol class="text-gray-300 text-sm space-y-1 list-decimal list-inside">
+                                <li>Open Minecraft Bedrock / Pocket Edition</li>
+                                <li>Go to: Play → Servers → Add Server</li>
+                                <li>Enter the Proxy IP and Port above</li>
+                                <li>Join and play!</li>
+                            </ol>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <p class="text-gray-400 text-xs mb-1">Target</p>
+                                <p class="text-white font-mono text-sm" id="targetServer">-</p>
+                            </div>
+                            <div class="bg-gray-800 bg-opacity-50 p-3 rounded-lg">
+                                <p class="text-gray-400 text-xs mb-1">Status</p>
+                                <p class="text-green-400 font-semibold text-sm">🟢 Active</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session History -->
+            <div class="glass-card p-8 rounded-2xl">
+                <h2 class="text-2xl font-bold text-white mb-6">
+                    <span class="gradient-text">Recent Sessions</span>
+                </h2>
+
+                <div id="sessionHistory" class="space-y-3">
+                    <p class="text-gray-400 text-center py-8">No sessions yet</p>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="container mx-auto px-4 py-8 mt-12">
+            <div class="text-center text-gray-500 text-sm">
+                <p>Bedrock Cloud Proxy v1.0.0</p>
+                <p class="mt-2">For legitimate Minecraft Bedrock Edition use only</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="scripts/app.js"></script>
+    
+</body>
+</html>
